@@ -26,7 +26,12 @@ type connection struct {
 // returns
 // 	-sql.DB on successsfull connection
 //  -error on any error occured while connecting to db.
-func (conn connection) Connect() (*sql.DB, error) {
+func (conn *connection) Connect() (*sql.DB, error) {
+
+	if conn.Db != nil {
+		return conn.Db, nil
+	}
+
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s", conn.Username, conn.Password, conn.Host, conn.Dbname)
 	db, err := sql.Open("mysql", dsn)
 
@@ -38,6 +43,8 @@ func (conn connection) Connect() (*sql.DB, error) {
 	if err != nil {
 		return nil, errors.New("Database ping failed with error : " + err.Error())
 	}
+
+	conn.Db = db
 	return db, nil
 }
 
@@ -63,6 +70,12 @@ func main() {
 	connection := parseConnectionFlags()
 	_, err := connection.Connect()
 
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
+	_, err = connection.Connect()
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
