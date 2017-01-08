@@ -1,1 +1,5 @@
+# Ignore excecutable
+mysql-migrate
+
+# Ignore vim swap files
 *.sw*
