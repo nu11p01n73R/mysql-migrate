@@ -27,7 +27,7 @@ func parseConnectionFlags() *connection {
 		Password: password, Dbname: *dbname}
 }
 
-func checkErrors(err) {
+func checkErrors(err error) {
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
@@ -41,4 +41,14 @@ func main() {
 
 	_, err = connection.Connect()
 	checkErrors(err)
+
+	migrations := migration_log{}
+	migrations.connection = *connection
+
+	hasTable, err := migrations.CheckLogTable()
+	checkErrors(err)
+	if !hasTable {
+		_, err = migrations.CreateLogTable()
+		checkErrors(err)
+	}
 }
