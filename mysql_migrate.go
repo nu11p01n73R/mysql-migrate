@@ -27,11 +27,27 @@ func parseConnectionFlags() *connection {
 		Password: password, Dbname: *dbname}
 }
 
+// Handle errors.
 func checkErrors(err error) {
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
+}
+
+// Initialise.
+func init() {
+	// Create log table if not exists.
+	hasTable, err := migrations.CheckLogTable()
+	checkErrors(err)
+	if !hasTable {
+		_, err = migrations.CreateLogTable()
+		checkErrors(err)
+	}
+
+	// Create migration dir if not exits
+	err = createMigrationDir()
+	checkErrors(err)
 }
 
 func main() {
@@ -45,10 +61,4 @@ func main() {
 	migrations := migration_log{}
 	migrations.connection = *connection
 
-	hasTable, err := migrations.CheckLogTable()
-	checkErrors(err)
-	if !hasTable {
-		_, err = migrations.CreateLogTable()
-		checkErrors(err)
-	}
 }
