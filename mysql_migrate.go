@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"golang.org/x/crypto/ssh/terminal"
@@ -12,19 +13,55 @@ import (
 // and return an connection type
 func parseConnectionFlags() *connection {
 	// Available flags.
-	host := flag.String("h", "", "MySQL host url")
+	host := flag.String("h", "localhost:3306", "MySQL host url")
 	username := flag.String("u", "", "MySQL user name")
 	dbname := flag.String("db", "", "MySQL database name")
 
 	flag.Parse()
 
 	var password string
-	fmt.Printf("Enter password for %s@%s\n", *username, *host)
-	bytePasssd, _ := terminal.ReadPassword(int(syscall.Stdin))
-	password = string(bytePasssd)
+	if *username != "" && *dbname != "" {
+		fmt.Printf("Enter password for %s@%s\n", *username, *host)
+		bytePasssd, _ := terminal.ReadPassword(int(syscall.Stdin))
+		password = string(bytePasssd)
+	}
 
 	return &connection{Host: *host, Username: *username,
 		Password: password, Dbname: *dbname}
+}
+
+// Parses command line arguments to obtain the command
+// to be executed.
+// Returns
+// 	[]string command followed by option
+//	error If the command is not known or invalid number
+func parseCommand() ([]string, error) {
+	flag.Parse()
+	command := flag.Args()
+
+	if !(len(command) == 1 || len(command) == 2) {
+		return []string{}, errors.New("Invalid number of parameters")
+	}
+
+	switch command[0] {
+	case "create", "migrate", "rollback":
+		return command, nil
+	default:
+		return []string{}, errors.New("Unkown command supplied")
+	}
+
+}
+
+// Runs a command
+// Returns
+// 	error Any error occured while running the command
+func runCommand(command []string) error {
+	var err error
+	switch command[0] {
+	case "create":
+		err = create(command[1])
+	}
+	return err
 }
 
 // Handle errors.
@@ -35,30 +72,11 @@ func checkErrors(err error) {
 	}
 }
 
-// Initialise.
-func init() {
-	// Create log table if not exists.
-	hasTable, err := migrations.CheckLogTable()
-	checkErrors(err)
-	if !hasTable {
-		_, err = migrations.CreateLogTable()
-		checkErrors(err)
-	}
-
-	// Create migration dir if not exits
-	err = createMigrationDir()
-	checkErrors(err)
-}
-
 func main() {
-	connection := parseConnectionFlags()
-	_, err := connection.Connect()
+	_ = parseConnectionFlags()
+	cmd, err := parseCommand()
 	checkErrors(err)
 
-	_, err = connection.Connect()
+	err = runCommand(cmd)
 	checkErrors(err)
-
-	migrations := migration_log{}
-	migrations.connection = *connection
-
 }

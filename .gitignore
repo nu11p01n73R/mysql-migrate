@@ -3,3 +3,7 @@ mysql-migrate
 
 # Ignore vim swap files
 *.sw*
+
+# Ignore migration folder
+migrations
+
