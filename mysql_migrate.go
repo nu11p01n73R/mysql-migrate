@@ -24,10 +24,13 @@ func parseConnectionFlags() *connection {
 		fmt.Printf("Enter password for %s@%s\n", *username, *host)
 		bytePasssd, _ := terminal.ReadPassword(int(syscall.Stdin))
 		password = string(bytePasssd)
+
+		return &connection{Host: *host, Username: *username,
+			Password: password, Dbname: *dbname}
 	}
 
-	return &connection{Host: *host, Username: *username,
-		Password: password, Dbname: *dbname}
+	return &connection{}
+
 }
 
 // Parses command line arguments to obtain the command
@@ -55,11 +58,15 @@ func parseCommand() ([]string, error) {
 // Runs a command
 // Returns
 // 	error Any error occured while running the command
-func runCommand(command []string) error {
+func runCommand(command []string, conn connection) error {
 	var err error
 	switch command[0] {
 	case "create":
 		err = create(command[1])
+	case "migrate":
+		err = migrate(conn)
+	default:
+		err = errors.New("Unknow command")
 	}
 	return err
 }
@@ -73,10 +80,10 @@ func checkErrors(err error) {
 }
 
 func main() {
-	_ = parseConnectionFlags()
+	conn := parseConnectionFlags()
 	cmd, err := parseCommand()
 	checkErrors(err)
 
-	err = runCommand(cmd)
+	err = runCommand(cmd, *conn)
 	checkErrors(err)
 }

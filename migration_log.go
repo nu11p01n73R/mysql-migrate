@@ -4,11 +4,12 @@ import (
 	"time"
 )
 
-type migration_log struct {
-	Version    string
-	Name       string
-	ApplyTime  time.Time
-	connection connection
+const MIGRATION_TABLE = "migration_log"
+
+type Migration struct {
+	Version   string
+	Name      string
+	ApplyTime time.Time
 }
 
 // Checks if the migration_log table exists in the
@@ -16,8 +17,8 @@ type migration_log struct {
 // Returns
 //	bool 	If the table exists or not
 //	error 	Any error that occured
-func (this *migration_log) CheckLogTable() (bool, error) {
-	db, err := this.connection.Connect()
+func checkLogTable(conn connection) (bool, error) {
+	db, err := conn.Connect()
 	if err != nil {
 		return false, err
 	}
@@ -32,11 +33,21 @@ func (this *migration_log) CheckLogTable() (bool, error) {
 	return true, nil
 }
 
-// Creates a new migration_log table.
+// Creates a new migration_log table,
+// if not exists.
 // Return
-//	bool 	If the table is created.
 // 	error	Any error that occured
-func (this *migration_log) CreateLogTable() (bool, error) {
+func createLogTable(conn connection) error {
+	ok, err := checkLogTable(conn)
+	if err != nil {
+		return err
+	}
+
+	// If the table already exists
+	if ok {
+		return nil
+	}
+
 	query := "CREATE TABLE `migration_log` (" +
 		"`version` bigint(20) NOT NULL," +
 		"`name` varchar(100) DEFAULT NULL," +
@@ -44,20 +55,56 @@ func (this *migration_log) CreateLogTable() (bool, error) {
 		"PRIMARY KEY (`version`)" +
 		") ENGINE=InnoDB DEFAULT CHARSET=utf8;"
 
-	db, err := this.connection.Connect()
+	db, err := conn.Connect()
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	statement, err := db.Prepare(query)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	_, err = statement.Exec()
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	return true, err
+	return nil
+}
+
+func getAppliedMigrations(conn connection) ([]Migration, error) {
+	migrations := []Migration{}
+
+	query := "SELECT version, name, apply_time " +
+		"FROM " + MIGRATION_TABLE
+
+	db, err := conn.Connect()
+	if err != nil {
+		return []Migration{}, err
+	}
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return []Migration{}, err
+	}
+
+	for rows.Next() {
+		migration := Migration{}
+		var applyTime string
+
+		err := rows.Scan(&migration.Version, &migration.Name, &applyTime)
+		if err != nil {
+			return []Migration{}, err
+		}
+
+		migration.ApplyTime, err = time.Parse("2006-01-02 15:04:05", applyTime)
+		if err != nil {
+			return []Migration{}, err
+		}
+
+		migrations = append(migrations, migration)
+	}
+	return migrations, nil
+
 }
