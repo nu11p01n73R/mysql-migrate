@@ -36,11 +36,14 @@ func createMigrationDir() error {
 	}
 }
 
-func generateFileName(name string) string {
+func generateFileName(name string) []string {
 	// Reference date
 	// Jan 2 15:04:05 2006 MST
 	id := time.Now().Format("20060102150405")
-	return MIGRATION_DIR + "/" + id + "_" + name + ".sql"
+	base := MIGRATION_DIR + "/" + id + "_" + name
+	return []string{
+		base + "_up.sql",
+		base + "_down.sql"}
 }
 
 func createMigrationFile(name string) error {
@@ -49,12 +52,16 @@ func createMigrationFile(name string) error {
 		return err
 	}
 
-	fileName := generateFileName(name)
-	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDONLY, 0666)
-	if err != nil {
-		return err
-	}
-	err = file.Close()
-	return err
+	fileNames := generateFileName(name)
+	for _, fileName := range fileNames {
+		file, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDONLY, 0666)
+		if err != nil {
+			return err
+		}
 
+		if err = file.Close(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
