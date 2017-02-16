@@ -3,13 +3,16 @@ package main
 import (
 	"database/sql"
 	"errors"
+	"flag"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"golang.org/x/crypto/ssh/terminal"
+	"syscall"
 )
 
 // Type connection defines a connection
 // to the MySQL database.
-type connection struct {
+type Connection struct {
 	Host     string
 	Username string
 	Dbname   string
@@ -17,12 +20,15 @@ type connection struct {
 	Db       *sql.DB
 }
 
+// Singleton connection object.
+var connection Connection
+
 // Connects to the database with the available
 // credentials on conn
 // returns
 // 	-sql.DB on successsfull connection
 //  -error on any error occured while connecting to db.
-func (conn *connection) Connect() (*sql.DB, error) {
+func (conn *Connection) Connect() (*sql.DB, error) {
 
 	if conn.Db != nil {
 		return conn.Db, nil
@@ -44,4 +50,39 @@ func (conn *connection) Connect() (*sql.DB, error) {
 
 	conn.Db = db
 	return db, nil
+}
+
+// Parses command line flags
+// and return an connection type
+func parseConnectionFlags() Connection {
+	// Available flags.
+	host := flag.String("h", "localhost:3306", "MySQL host url")
+	username := flag.String("u", "", "MySQL user name")
+	dbname := flag.String("db", "", "MySQL database name")
+
+	flag.Parse()
+
+	// Todo Add checks for username and password
+
+	var password string
+	fmt.Printf("Enter password for %s@%s\n", *username, *host)
+	bytePasssd, _ := terminal.ReadPassword(int(syscall.Stdin))
+	password = string(bytePasssd)
+
+	return Connection{Host: *host, Username: *username,
+		Password: password, Dbname: *dbname}
+}
+
+func getDbConnection() (*sql.DB, error) {
+	if connection.Db != nil {
+		return connection.Db, nil
+	}
+
+	connection = parseConnectionFlags()
+	_, err := connection.Connect()
+	if err != nil {
+		return nil, err
+	}
+
+	return connection.Db, nil
 }

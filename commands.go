@@ -10,8 +10,8 @@ func create(name string) error {
 	return err
 }
 
-func migrate(conn connection) error {
-	if conn == (connection{}) {
+func migrate(conn Connection) error {
+	if conn == (Connection{}) {
 		return errors.New("No connection available to db")
 	}
 
@@ -25,7 +25,11 @@ func migrate(conn connection) error {
 	if err != nil {
 		return err
 	}
+	available, err := getAvailableMigrations()
+	if err != nil {
+		return err
+	}
 
-	fmt.Println(applied)
+	fmt.Println(applied, available)
 	return nil
 }

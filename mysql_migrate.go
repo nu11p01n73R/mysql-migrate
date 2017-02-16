@@ -4,34 +4,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"golang.org/x/crypto/ssh/terminal"
 	"os"
-	"syscall"
 )
-
-// Parses command line flags
-// and return an connection type
-func parseConnectionFlags() *connection {
-	// Available flags.
-	host := flag.String("h", "localhost:3306", "MySQL host url")
-	username := flag.String("u", "", "MySQL user name")
-	dbname := flag.String("db", "", "MySQL database name")
-
-	flag.Parse()
-
-	var password string
-	if *username != "" && *dbname != "" {
-		fmt.Printf("Enter password for %s@%s\n", *username, *host)
-		bytePasssd, _ := terminal.ReadPassword(int(syscall.Stdin))
-		password = string(bytePasssd)
-
-		return &connection{Host: *host, Username: *username,
-			Password: password, Dbname: *dbname}
-	}
-
-	return &connection{}
-
-}
 
 // Parses command line arguments to obtain the command
 // to be executed.
@@ -58,7 +32,7 @@ func parseCommand() ([]string, error) {
 // Runs a command
 // Returns
 // 	error Any error occured while running the command
-func runCommand(command []string, conn connection) error {
+func runCommand(command []string, conn Connection) error {
 	var err error
 	switch command[0] {
 	case "create":
@@ -80,10 +54,6 @@ func checkErrors(err error) {
 }
 
 func main() {
-	conn := parseConnectionFlags()
-	cmd, err := parseCommand()
-	checkErrors(err)
-
-	err = runCommand(cmd, *conn)
+	_, err := getDbConnection()
 	checkErrors(err)
 }

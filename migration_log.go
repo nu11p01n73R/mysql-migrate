@@ -17,7 +17,7 @@ type Migration struct {
 // Returns
 //	bool 	If the table exists or not
 //	error 	Any error that occured
-func checkLogTable(conn connection) (bool, error) {
+func checkLogTable(conn Connection) (bool, error) {
 	db, err := conn.Connect()
 	if err != nil {
 		return false, err
@@ -37,7 +37,7 @@ func checkLogTable(conn connection) (bool, error) {
 // if not exists.
 // Return
 // 	error	Any error that occured
-func createLogTable(conn connection) error {
+func createLogTable(conn Connection) error {
 	ok, err := checkLogTable(conn)
 	if err != nil {
 		return err
@@ -73,7 +73,7 @@ func createLogTable(conn connection) error {
 	return nil
 }
 
-func getAppliedMigrations(conn connection) ([]Migration, error) {
+func getAppliedMigrations(conn Connection) ([]Migration, error) {
 	migrations := []Migration{}
 
 	query := "SELECT version, name, apply_time " +
