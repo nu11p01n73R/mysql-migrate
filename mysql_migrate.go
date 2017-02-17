@@ -32,13 +32,13 @@ func parseCommand() ([]string, error) {
 // Runs a command
 // Returns
 // 	error Any error occured while running the command
-func runCommand(command []string, conn Connection) error {
+func runCommand(command []string) error {
 	var err error
 	switch command[0] {
 	case "create":
 		err = create(command[1])
 	case "migrate":
-		err = migrate(conn)
+		err = migrate()
 	default:
 		err = errors.New("Unknow command")
 	}

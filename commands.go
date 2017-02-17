@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -10,18 +9,13 @@ func create(name string) error {
 	return err
 }
 
-func migrate(conn Connection) error {
-	if conn == (Connection{}) {
-		return errors.New("No connection available to db")
-	}
-
-	err := createLogTable(conn)
-
+func migrate() error {
+	err := createLogTable()
 	if err != nil {
 		return err
 	}
 
-	applied, err := getAppliedMigrations(conn)
+	applied, err := getAppliedMigrations()
 	if err != nil {
 		return err
 	}

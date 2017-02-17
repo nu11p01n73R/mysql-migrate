@@ -17,8 +17,8 @@ type Migration struct {
 // Returns
 //	bool 	If the table exists or not
 //	error 	Any error that occured
-func checkLogTable(conn Connection) (bool, error) {
-	db, err := conn.Connect()
+func checkLogTable() (bool, error) {
+	db, err := getDbConnection()
 	if err != nil {
 		return false, err
 	}
@@ -37,8 +37,8 @@ func checkLogTable(conn Connection) (bool, error) {
 // if not exists.
 // Return
 // 	error	Any error that occured
-func createLogTable(conn Connection) error {
-	ok, err := checkLogTable(conn)
+func createLogTable() error {
+	ok, err := checkLogTable()
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func createLogTable(conn Connection) error {
 		"PRIMARY KEY (`version`)" +
 		") ENGINE=InnoDB DEFAULT CHARSET=utf8;"
 
-	db, err := conn.Connect()
+	db, err := getDbConnection()
 	if err != nil {
 		return err
 	}
@@ -73,13 +73,13 @@ func createLogTable(conn Connection) error {
 	return nil
 }
 
-func getAppliedMigrations(conn Connection) ([]Migration, error) {
+func getAppliedMigrations() ([]Migration, error) {
 	migrations := []Migration{}
 
 	query := "SELECT version, name, apply_time " +
 		"FROM " + MIGRATION_TABLE
 
-	db, err := conn.Connect()
+	db, err := getDbConnection()
 	if err != nil {
 		return []Migration{}, err
 	}

@@ -54,7 +54,7 @@ func (conn *Connection) Connect() (*sql.DB, error) {
 
 // Parses command line flags
 // and return an connection type
-func parseConnectionFlags() Connection {
+func parseConnectionFlags() (Connection, error) {
 	// Available flags.
 	host := flag.String("h", "localhost:3306", "MySQL host url")
 	username := flag.String("u", "", "MySQL user name")
@@ -62,7 +62,12 @@ func parseConnectionFlags() Connection {
 
 	flag.Parse()
 
-	// Todo Add checks for username and password
+	if *username == "" {
+		return Connection{}, errors.New("User name cannot be empty")
+	}
+	if *dbname == "" {
+		return Connection{}, errors.New("Database name cannot be empty")
+	}
 
 	var password string
 	fmt.Printf("Enter password for %s@%s\n", *username, *host)
@@ -70,16 +75,24 @@ func parseConnectionFlags() Connection {
 	password = string(bytePasssd)
 
 	return Connection{Host: *host, Username: *username,
-		Password: password, Dbname: *dbname}
+		Password: password, Dbname: *dbname}, nil
 }
 
+// Single source for obtaining a database connection.
 func getDbConnection() (*sql.DB, error) {
+	// If already connected, return the connection.
 	if connection.Db != nil {
 		return connection.Db, nil
 	}
 
-	connection = parseConnectionFlags()
-	_, err := connection.Connect()
+	// Required to prevent declaring new local connection
+	var err error
+	connection, err = parseConnectionFlags()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = connection.Connect()
 	if err != nil {
 		return nil, err
 	}
