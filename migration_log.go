@@ -6,12 +6,6 @@ import (
 
 const MIGRATION_TABLE = "migration_log"
 
-type Migration struct {
-	Version   string
-	Name      string
-	ApplyTime time.Time
-}
-
 // Checks if the migration_log table exists in the
 // database connected by connection
 // Returns
