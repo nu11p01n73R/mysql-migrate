@@ -7,26 +7,29 @@ import (
 )
 
 func create(name string) error {
-	err := createMigrationFile(name)
+	migration := Migration{
+		Name: name}
+	migration.GenerateVersion()
+	err := migration.CreateFiles()
 	return err
 }
 
 func migrate() error {
-	err := createLogTable()
+	return nil
+}
+
+func list() error {
+	migrations, err := getAvailableMigrations()
 	if err != nil {
 		return err
 	}
 
-	applied, err := getAppliedMigrations()
-	if err != nil {
-		return err
-	}
-	available, err := getAvailableMigrations()
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(applied, available)
+	fmt.Println(migrations)
+	//available, err := getAvailableMigrations()
+	//if err != nil {
+	//		return err
+	//	}
+	//	fmt.Println(available)
 	return nil
 }
 
@@ -44,7 +47,7 @@ func parseCommand() ([]string, error) {
 	}
 
 	switch command[0] {
-	case "create", "migrate", "rollback":
+	case "create", "list":
 		return command, nil
 	default:
 		return []string{}, errors.New("Unkown command supplied")
@@ -67,6 +70,8 @@ func runCommand() error {
 		err = create(command[1])
 	case "migrate":
 		err = migrate()
+	case "list":
+		err = list()
 	default:
 		err = errors.New("Unknow command")
 	}
